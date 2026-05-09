@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+from pathlib import Path
 from typing import Any, Literal, NotRequired, TypedDict
 
 from langchain_core._api.deprecation import suppress_langchain_deprecation_warning
@@ -169,12 +170,21 @@ def print_json(value: Any) -> None:
     print(json.dumps(to_jsonable(value), indent=2, ensure_ascii=False))
 
 
-def run_with_debug() -> AnalysisResult:
+def load_ticket(input_path: str | None) -> JiraTicket:
+    if input_path is None:
+        return DUMMY_TICKET
+
+    path = Path(input_path)
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    return JiraTicket.model_validate(payload)
+
+
+def run_with_debug(ticket: JiraTicket) -> AnalysisResult:
     app = build_graph()
     result: AnalysisResult | None = None
 
     print("Node transitions:")
-    for update in app.stream({"ticket": DUMMY_TICKET}, stream_mode="updates"):
+    for update in app.stream({"ticket": ticket}, stream_mode="updates"):
         for node_name, node_update in update.items():
             print(f"\n[{node_name}]")
             print_json(node_update)
@@ -198,17 +208,22 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Print each LangGraph node update before the final result.",
     )
+    parser.add_argument(
+        "--input",
+        help="Path to a UTF-8 JSON file containing one Jira ticket.",
+    )
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
+    ticket = load_ticket(args.input)
 
     if args.debug:
-        result = run_with_debug()
+        result = run_with_debug(ticket)
     else:
         app = build_graph()
-        final_state = app.invoke({"ticket": DUMMY_TICKET})
+        final_state = app.invoke({"ticket": ticket})
         result = final_state["result"]
 
     print_json(result)

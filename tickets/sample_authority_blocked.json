@@ -1,0 +1,11 @@
+{
+  "key": "HELP-123",
+  "summary": "Unable to reset customer MFA",
+  "description": "The support agent escalated the ticket after finding that MFA reset requires an administrator role.",
+  "comments": [
+    "Checked the runbook and confirmed the documented reset steps.",
+    "The reset button is disabled for the support role.",
+    "Escalating to an administrator because elevated permission is required."
+  ],
+  "escalated": true
+}
