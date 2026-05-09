@@ -1,44 +1,70 @@
-# Repository Guidelines
+# リポジトリガイドライン
 
-## Project Structure & Module Organization
+## 基本方針
 
-This is a small Python 3.12 project. The current entry point is `main.py` at the repository root. Project metadata lives in `pyproject.toml`, and the Python version is pinned in `.python-version`. `README.md` is present but currently empty.
+- ユーザーとの会話は日本語で行う
+- 技術説明も日本語で行う
+- 簡潔かつ実践的に回答する
 
-Use a `tests/` directory for test files as the project grows. If the application expands beyond a single script, move reusable code into a package directory such as `langgraph_playground/` and keep `main.py` as a thin CLI or startup wrapper.
+## シェルとトラブルシューティング
 
-## Build, Test, and Development Commands
+- ユーザーは普段 PowerShell ではなく Git Bash を利用している
+- Codex の内部作業では、確認プロンプトを減らすため PowerShell を優先して使う
+- ユーザーに提示する実行コマンド、README の例、トラブルシューティング手順は Git Bash 前提を優先する
+- Git Bash 固有の再現確認が必要な場合のみ Git Bash を使う
+- Windows 固有の操作が必要な場合のみ PowerShell の例をユーザー向けに補足する
+- Python 実行や依存関係操作は `uv` を優先する
+- Codex の内部確認で Git Bash が権限確認を繰り返す場合、読み取り専用の調査には PowerShell を使ってよい
+- その場合でも、ユーザーに提示する実行コマンドや手順は Git Bash 形式を優先する
 
-- `python main.py`: run the current application entry point.
-- `python -m venv .venv`: create a local virtual environment if one is not already present.
-- `.\.venv\Scripts\Activate.ps1`: activate the virtual environment on Windows PowerShell.
-- `python -m pip install -e .`: install the project in editable mode.
+Git Bash での基本コマンド:
 
-There are no declared runtime dependencies or build scripts yet. Add dependencies to `pyproject.toml` rather than importing undeclared packages.
-
-## Coding Style & Naming Conventions
-
-Use standard Python style: 4-space indentation, `snake_case` for functions and variables, `PascalCase` for classes, and uppercase names for constants. Keep functions small and give modules names that describe behavior, for example `graph_runner.py` or `state_store.py`.
-
-Prefer type hints for public functions and code that crosses module boundaries. Keep side effects under `if __name__ == "__main__":` so modules remain importable from tests.
-
-## Testing Guidelines
-
-No test framework is configured yet. When adding tests, use `pytest` unless the project adopts another framework. Put tests under `tests/` and name files `test_*.py`.
-
-Recommended command after adding pytest:
-
-```powershell
-python -m pytest
+```bash
+uv run python main.py
+uv run python -m pytest
 ```
 
-Focus tests on graph behavior, state transitions, and any external integrations. Use fixtures or fakes for networked services rather than calling real APIs in unit tests.
+## プロジェクト構成とモジュール整理
 
-## Commit & Pull Request Guidelines
+このリポジトリは小規模な Python 3.12 プロジェクトです。現在のエントリーポイントはリポジトリルートの `main.py` です。プロジェクトメタデータは `pyproject.toml` にあり、Python バージョンは `.python-version` で固定されています。
 
-This repository has no commits yet, so there is no existing commit convention to follow. Use concise, imperative commit messages, for example `Add graph runner entry point` or `Configure pytest`.
+プロジェクトが大きくなったら、テストファイルは `tests/` ディレクトリに配置してください。アプリケーションが単一スクリプトを超えて成長した場合は、再利用可能なコードを `langgraph_playground/` のようなパッケージディレクトリへ移し、`main.py` は薄い CLI または起動用ラッパーとして保ちます。
 
-Pull requests should include a short summary, the reason for the change, test results, and any setup or configuration notes. Link related issues when available. Include screenshots only for changes that affect visual output or developer-facing UI.
+## ビルド、テスト、開発コマンド
 
-## Security & Configuration Tips
+- `uv run python main.py`: 現在のアプリケーションエントリーポイントを実行します
+- `uv add <package>`: 依存関係を追加します
+- `uv run python -m pytest`: pytest 追加後にテストを実行します
 
-Do not commit secrets, API keys, or populated local environment files. Keep virtual environments, build artifacts, and caches out of version control; `.gitignore` already excludes `.venv`, `__pycache__`, and build outputs.
+未宣言のパッケージを import するのではなく、依存関係は `pyproject.toml` に追加してください。
+
+## コーディングスタイルと命名規則
+
+コード、識別子、コメントは英語で記述します。標準的な Python スタイルを使用します。インデントは 4 スペース、関数と変数は `snake_case`、クラスは `PascalCase`、定数は大文字の名前にしてください。
+
+公開関数やモジュール境界をまたぐコードには、型ヒントを優先して付けてください。テストからモジュールを import しやすいように、副作用のある処理は `if __name__ == "__main__":` の下に置きます。
+
+## Python
+
+- `uv` を使用する
+- Python 3.12 を前提とする
+- `pydantic` と typed state を優先する
+- 過剰な抽象化を避け、シンプルで読みやすい実装を優先する
+
+## テスト方針
+
+まだテストフレームワークは設定されていません。テストを追加する場合、プロジェクトで別のフレームワークを採用しない限り `pytest` を使用してください。テストは `tests/` 配下に置き、ファイル名は `test_*.py` にします。
+
+テストでは、グラフの振る舞い、状態遷移、外部連携を重点的に確認します。ユニットテストでは実 API を呼び出さず、ネットワークサービスには fixture や fake を使用してください。
+
+## コミットとプルリクエストの方針
+
+このリポジトリにはまだコミットがないため、既存のコミット規約はありません。コミットメッセージは `Add graph runner entry point` や `Configure pytest` のように、簡潔で命令形の文にしてください。
+
+プルリクエストには、短い概要、変更理由、テスト結果、セットアップや設定に関する注意点を含めてください。関連 issue がある場合はリンクします。
+
+## セキュリティと設定の注意
+
+シークレット、API キー、値が入ったローカル環境ファイルはコミットしないでください。仮想環境、ビルド成果物、キャッシュはバージョン管理に含めません。
+
+ファイル削除や破壊的操作の前には確認してください。
