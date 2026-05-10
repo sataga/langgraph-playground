@@ -9,20 +9,7 @@ from pydantic import BaseModel
 from escalation_analysis.models import JiraTicket
 
 
-DUMMY_TICKET = JiraTicket(
-    key="HELP-123",
-    summary="Unable to reset customer MFA",
-    description=(
-        "The support agent escalated the ticket after finding that MFA reset "
-        "requires an administrator role."
-    ),
-    comments=[
-        "Checked the runbook and confirmed the documented reset steps.",
-        "The reset button is disabled for the support role.",
-        "Escalating to an administrator because elevated permission is required.",
-    ],
-    escalated=True,
-)
+DEFAULT_TICKET_PATH = Path("tickets/sample_escalated_vm_metadata_corruption.json")
 
 
 def to_jsonable(value: Any) -> Any:
@@ -40,9 +27,6 @@ def print_json(value: Any) -> None:
 
 
 def load_ticket(input_path: str | None) -> JiraTicket:
-    if input_path is None:
-        return DUMMY_TICKET
-
-    path = Path(input_path)
+    path = DEFAULT_TICKET_PATH if input_path is None else Path(input_path)
     payload = json.loads(path.read_text(encoding="utf-8"))
     return JiraTicket.model_validate(payload)

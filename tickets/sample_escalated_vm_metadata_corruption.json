@@ -1,0 +1,35 @@
+{
+  "component": ["vm/pm"],
+  "key": "SAMPLE-9062",
+  "url": "https://sample.atlassian.net/browse/SAMPLE-9062",
+  "created": "2026-03-29 12:34",
+  "closed": "2026-04-05 15:20",
+  "summary": "VM becomes unstable and fails to start after reboot",
+  "description": "The customer reported that the VM repeatedly failed to start and sometimes became unresponsive after reboot. Investigation found that the VM metadata was corrupted. Recovery requires administrator access to repair the metadata from the management plane.",
+  "labels": ["vm", "metadata", "admin-required"],
+  "category": "Incident",
+  "assignee": "Support Agent",
+  "escalation": true,
+  "no_document": false,
+  "comments": [
+    {
+      "body": "Reporter said the VM did not start after reboot and the console showed inconsistent instance information.",
+      "created": "2026-03-29 13:00"
+    },
+    {
+      "body": "Support checked the VM status and confirmed that normal guest OS recovery steps did not resolve the issue.",
+      "created": "2026-03-30 10:15"
+    },
+    {
+      "body": "Platform team found corrupted VM metadata and confirmed that administrator permission is required to repair it from the management plane.",
+      "created": "2026-04-05 15:20"
+    }
+  ],
+  "comment_stats": {
+    "total_comments": 3,
+    "first_cs_comment": 2,
+    "rerporter_comments": 1,
+    "other_comments": 0,
+    "first_cs_ratio": 0.67
+  }
+}

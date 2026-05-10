@@ -29,7 +29,7 @@ def run_with_debug(ticket: JiraTicket) -> AnalysisResult:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Analyze a dummy Jira escalation ticket with LangGraph."
+        description="Analyze a Jira escalation ticket with LangGraph."
     )
     parser.add_argument(
         "--debug",
@@ -38,7 +38,10 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--input",
-        help="Path to a UTF-8 JSON file containing one Jira ticket.",
+        help=(
+            "Path to a UTF-8 JSON file containing one Jira ticket. "
+            "Defaults to tickets/sample_escalated_vm_metadata_corruption.json."
+        ),
     )
     return parser.parse_args()
 

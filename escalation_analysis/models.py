@@ -8,12 +8,26 @@ from pydantic import BaseModel, Field
 Category = Literal["knowledge_gap", "authority_blocked", "mixed", "unclear"]
 
 
+class TicketComment(BaseModel):
+    body: str
+    created: str = ""
+
+
 class JiraTicket(BaseModel):
+    component: list[str] = Field(default_factory=list)
     key: str
+    url: str = ""
+    created: str = ""
+    closed: str | None = None
     summary: str
     description: str
-    comments: list[str] = Field(default_factory=list)
-    escalated: bool = False
+    labels: list[str] = Field(default_factory=list)
+    category: str = ""
+    assignee: str = ""
+    escalation: bool = False
+    no_document: bool = False
+    comments: list[TicketComment] = Field(default_factory=list)
+    comment_stats: dict[str, float | int] = Field(default_factory=dict)
 
 
 class AnalysisResult(BaseModel):
