@@ -14,16 +14,21 @@ Jira エスカレーション自動分析エージェントを、小さなステ
 
 ## 作ろうとしているもの
 
-Jira チケットの内容を見て、エスカレーション理由を分類する小さな分析エージェントを作ります。
+エスカレーション済みの Jira チケットの内容を見て、そのエスカレーション理由を分類する小さな分析エージェントを作ります。
 
 現在は、次の分類を扱います。
 
-- `knowledge_gap`: 既存ドキュメントや調査で解決できた可能性がある
-- `authority_blocked`: 権限やロール不足で担当者だけでは解決できなかった
+- `knowledge_gap`: 次回からは一次受付で対応できる見込みがある
+- `authority_blocked`: 権限やロール不足で一次受付だけでは解決できなかった
 - `mixed`: 知識不足と権限不足の両方の要素がある
 - `unclear`: 判断材料が足りない
 
-現時点では OpenAI API や職場データは使いません。まずはダミー Jira チケットとキーワードベースの判定で、LangGraph の基本構造を理解する段階です。
+現在は、ダミー Jira チケットを使って次の 2 通りの実装を試せます。
+
+- ルールベース版: キーワード判定で分類する
+- LLM 使用版: OpenAI API を使ってチケット本文を解析し、Pydantic の結果形式で受け取る
+
+職場データは使いません。まずはサンプル JSON で、LangGraph の基本構造と LLM ノードの差し替え方を理解する段階です。
 
 ## 学習ステップ
 
@@ -45,9 +50,19 @@ START
 
 ### Step 2: LLM 判定ノードへ置き換える
 
-次のステップでは、`score_knowledge_gap` と `score_authority_blocked` を LLM 判定ノードへ差し替えます。
+`--llm` を付けると、`score_knowledge_gap`、`score_authority_blocked`、`judge_category`、`assign_label` の代わりに、LLM 判定ノード `analyze_with_llm` を使います。
 
-まずルールベースでデータの流れを理解してから、LLM に任せる部分を増やしていきます。
+LLM 使用版の流れは次の通りです。
+
+```text
+START
+  -> extract_evidence
+  -> analyze_with_llm
+  -> END
+```
+
+LLM の出力は `AnalysisResult` に合わせた structured output として受け取り、`category`、`label`、`confidence`、`reason`、`evidence` を返します。
+まずルールベースでデータの流れを理解してから、同じ入力を LLM 版で実行して結果の違いを見ると学びやすいです。
 
 ## プロジェクト構成
 
@@ -57,6 +72,7 @@ START
 ├── escalation_analysis/
 │   ├── graph.py
 │   ├── io.py
+│   ├── llm.py
 │   ├── models.py
 │   ├── rules.py
 │   └── state.py
@@ -68,8 +84,29 @@ START
 - `models.py`: Jira チケットと分析結果のデータ定義
 - `state.py`: LangGraph で共有する State の型定義
 - `rules.py`: 証拠抽出、スコア計算、分類、ラベル付け
+- `llm.py`: OpenAI API を使った LLM 判定ノード
 - `graph.py`: LangGraph の Node と Edge の組み立て
 - `io.py`: JSON 入出力とダミーチケット
+
+## LLM 使用版の準備
+
+LLM 使用版を動かすには OpenAI API key が必要です。ChatGPT Plus とは別に、OpenAI Platform 側の API key と API クレジットを使います。
+
+リポジトリ直下に `.env` を作り、次のように API key を保存します。
+
+```env
+OPENAI_API_KEY=sk-...
+```
+
+`.env` は `.gitignore` に含めています。API key は README、チケット JSON、GitHub issue、チャットなどに貼らないでください。
+
+課金を抑えるため、最初は OpenAI Platform の billing で次の状態にしておくと安全です。
+
+- credit balance は少額から始める
+- auto recharge は off にする
+- usage をこまめに確認する
+
+デフォルトモデルは `gpt-5-nano` です。分類や要約向けの安価なモデルとして、学習用途の初期値にしています。
 
 ## 実行方法
 
@@ -86,7 +123,7 @@ uv run python main.py --input tickets/sample_escalated_vm_metadata_corruption.js
 ```
 
 ```bash
-uv run python main.py --input tickets/sample_resolved_by_first_cs_rebuild.json
+uv run python main.py --input tickets/sample_escalated_first_cs_rebuild_missed.json
 ```
 
 Node の移り変わりを確認:
@@ -100,6 +137,38 @@ JSON ファイルを指定して Node の移り変わりを確認:
 ```bash
 uv run python main.py --input tickets/sample_escalated_vm_metadata_corruption.json --debug
 ```
+
+### LLM 使用版を実行
+
+OpenAI API を呼び出す場合は `--llm` を付けます。
+
+```bash
+uv run python main.py --llm
+```
+
+JSON ファイルを指定して LLM 版を実行:
+
+```bash
+uv run python main.py --input tickets/sample_escalated_vm_metadata_corruption.json --llm
+```
+
+```bash
+uv run python main.py --input tickets/sample_escalated_first_cs_rebuild_missed.json --llm
+```
+
+LLM ノードの入出力を確認:
+
+```bash
+uv run python main.py --llm --debug
+```
+
+モデルを明示して実行:
+
+```bash
+uv run python main.py --llm --model gpt-5-nano
+```
+
+`--llm` を付けない限り API は呼び出されません。ルールベース版と LLM 版を比較するときは、同じ `--input` に対して両方を実行します。
 
 ## Windows 環境構築
 

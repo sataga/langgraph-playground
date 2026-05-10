@@ -7,8 +7,13 @@ from escalation_analysis.io import load_ticket, print_json
 from escalation_analysis.models import AnalysisResult, JiraTicket
 
 
-def run_with_debug(ticket: JiraTicket) -> AnalysisResult:
-    app = build_graph()
+def run_with_debug(
+    ticket: JiraTicket,
+    *,
+    use_llm: bool = False,
+    model: str = "gpt-5-nano",
+) -> AnalysisResult:
+    app = build_graph(use_llm=use_llm, model=model)
     result: AnalysisResult | None = None
 
     print("Node transitions:")
@@ -43,6 +48,16 @@ def parse_args() -> argparse.Namespace:
             "Defaults to tickets/sample_escalated_vm_metadata_corruption.json."
         ),
     )
+    parser.add_argument(
+        "--llm",
+        action="store_true",
+        help="Use an OpenAI model to classify the ticket instead of local rules.",
+    )
+    parser.add_argument(
+        "--model",
+        default="gpt-5-nano",
+        help="OpenAI model name used with --llm. Defaults to gpt-5-nano.",
+    )
     return parser.parse_args()
 
 
@@ -51,9 +66,9 @@ def main() -> None:
     ticket = load_ticket(args.input)
 
     if args.debug:
-        result = run_with_debug(ticket)
+        result = run_with_debug(ticket, use_llm=args.llm, model=args.model)
     else:
-        app = build_graph()
+        app = build_graph(use_llm=args.llm, model=args.model)
         final_state = app.invoke({"ticket": ticket})
         result = final_state["result"]
 

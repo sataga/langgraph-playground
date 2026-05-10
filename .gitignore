@@ -7,4 +7,10 @@ wheels/
 *.egg-info
 
 # Virtual environments
-.venv
+.venv/
+
+# Local environment files
+.env
+
+# Test cache
+.pytest_cache/
