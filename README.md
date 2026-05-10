@@ -14,12 +14,12 @@ Jira エスカレーション自動分析エージェントを、小さなステ
 
 ## 作ろうとしているもの
 
-Jira チケットの内容を見て、エスカレーション理由を分類する小さな分析エージェントを作ります。
+エスカレーション済みの Jira チケットの内容を見て、そのエスカレーション理由を分類する小さな分析エージェントを作ります。
 
 現在は、次の分類を扱います。
 
-- `knowledge_gap`: 既存ドキュメントや調査で解決できた可能性がある
-- `authority_blocked`: 権限やロール不足で担当者だけでは解決できなかった
+- `knowledge_gap`: 次回からは一次受付で対応できる見込みがある
+- `authority_blocked`: 権限やロール不足で一次受付だけでは解決できなかった
 - `mixed`: 知識不足と権限不足の両方の要素がある
 - `unclear`: 判断材料が足りない
 
@@ -123,7 +123,7 @@ uv run python main.py --input tickets/sample_escalated_vm_metadata_corruption.js
 ```
 
 ```bash
-uv run python main.py --input tickets/sample_resolved_by_first_cs_rebuild.json
+uv run python main.py --input tickets/sample_escalated_first_cs_rebuild_missed.json
 ```
 
 Node の移り変わりを確認:
@@ -153,7 +153,7 @@ uv run python main.py --input tickets/sample_escalated_vm_metadata_corruption.js
 ```
 
 ```bash
-uv run python main.py --input tickets/sample_resolved_by_first_cs_rebuild.json --llm
+uv run python main.py --input tickets/sample_escalated_first_cs_rebuild_missed.json --llm
 ```
 
 LLM ノードの入出力を確認:

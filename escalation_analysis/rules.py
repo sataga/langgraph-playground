@@ -6,10 +6,14 @@ from escalation_analysis.state import TicketAnalysisState
 
 KNOWLEDGE_KEYWORDS = [
     "runbook not checked",
+    "without checking",
     "did not check",
+    "before checking",
     "unknown procedure",
     "missed document",
     "investigation missing",
+    "should have been attempted",
+    "existing rebuild runbook",
 ]
 
 AUTHORITY_KEYWORDS = [

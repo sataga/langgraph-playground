@@ -17,10 +17,12 @@ LABELS = {
     "unclear": "escalation:needs_human_review",
 }
 
-SYSTEM_PROMPT = """You classify Jira escalation tickets.
+SYSTEM_PROMPT = """You classify Jira tickets that were already escalated.
+
+Classify why the escalation happened, not whether the ticket was escalated.
 
 Return one category:
-- knowledge_gap: escalation was likely avoidable with existing docs, runbooks, or basic investigation.
+- knowledge_gap: future similar tickets can likely be handled by first-level support using existing docs, runbooks, or basic investigation.
 - authority_blocked: escalation was unavoidable because the agent lacked required permission, role, or admin access.
 - mixed: both avoidable knowledge gaps and permission blockers are present.
 - unclear: there is not enough evidence to decide.
