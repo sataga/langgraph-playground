@@ -140,3 +140,6 @@ uv run python -m pytest
 - テスト結果には、実際に実行したコマンドと得られた主要ログを可能な限り記載する
 - LLM/API を使った検証を行った場合は、実行コマンド、対象入力、結果概要、token/credit 消費に関する注意を記載する
 - LLM/API を使わずに検証した場合も、その理由と代替確認方法を記載する
+- 日本語の PR 本文を `gh pr create` / `gh pr edit` に渡す場合、PowerShell の引数へ直接長文を渡さず、UTF-8 の本文ファイルを作成して `--body-file` で渡す
+- PowerShell で PR 本文ファイルを作る場合は、`[System.IO.File]::WriteAllText($path, $body, [System.Text.UTF8Encoding]::new($false))` のように UTF-8 を明示する
+- PR 作成後は `gh pr view <number> --json title,body,url` で本文を取得し、日本語が文字化けしていないことを確認する
