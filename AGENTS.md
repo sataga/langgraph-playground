@@ -5,6 +5,12 @@
 - ユーザーとの会話は日本語で行う
 - 技術説明も日本語で行う
 - 簡潔かつ実践的に回答する
+- まず最小構成で動く正常系を完成させる
+- 正常系を先に完成させた後、主要な異常系を確認する
+- 異常系では、原因が追えるエラーメッセージとログを残す
+- premature optimization を避ける
+- 修正時は既存コードのスタイルを優先する
+- 無関係なリファクタリングをしない
 
 ## シェルとトラブルシューティング
 
@@ -49,13 +55,45 @@ uv run python -m pytest
 - `uv` を使用する
 - Python 3.12 を前提とする
 - `pydantic` と typed state を優先する
+- dataclass より pydantic model を優先する
 - 過剰な抽象化を避け、シンプルで読みやすい実装を優先する
+
+## LangGraph / LLM 実装方針
+
+- LLM/API 呼び出しは token とクレジットを消費するため、必要最小限にする
+- 通常の動作確認では `--llm` を付けず、ルールベース版や fake、mock、compile check を優先する
+- どうしても実 API の疎通や LLM 出力確認が必要な場合だけ、理由を明確にして `--llm` で検証する
+- 実 API を使う検証は最小件数、短い入力、安価なモデルで行う
+- 小さな node に分割し、1 node 1 responsibility を優先する
+- prompt は関数や定数として分離する
+- state mutation は最小限にし、暗黙的な state 更新を避ける
+- graph の分岐条件は明示的に書く
+- structured output を優先し、LLM 出力は pydantic で検証する
+- retry で問題を隠蔽しない
+- failure reason をログへ残す
+- magic number や hidden rule を避ける
+
+## OpenAI / LangChain 方針
+
+- 不要な LangChain abstraction を増やさない
+- まず OpenAI SDK と LangGraph を優先する
+- 本当に必要になるまで callback や custom middleware を増やさない
+- prompt chain より状態遷移を重視する
+- wrapper を増やしすぎず、小規模ではシンプルな構成を維持する
+
+## ログ方針
+
+- `print` より `logging` を優先する
+- node の開始と終了をログへ出力する
+- エラー時は context を含める
+- LLM 入出力は必要に応じて確認可能にする
+- API key、secret、`.env` の値はログへ出力しない
 
 ## テスト方針
 
 まだテストフレームワークは設定されていません。テストを追加する場合、プロジェクトで別のフレームワークを採用しない限り `pytest` を使用してください。テストは `tests/` 配下に置き、ファイル名は `test_*.py` にします。
 
-テストでは、グラフの振る舞い、状態遷移、外部連携を重点的に確認します。ユニットテストでは実 API を呼び出さず、ネットワークサービスには fixture や fake を使用してください。
+テストでは、グラフの振る舞い、状態遷移、外部連携を重点的に確認します。まず正常系を優先してテストし、その後に入力不備、外部 API 失敗、LLM 出力不正など主要な異常系を追加します。node 単位でテスト可能にし、ユニットテストでは実 API や LLM を呼び出さず、fixture、fake、mock を使用してください。
 
 ## コミットとプルリクエストの方針
 
@@ -65,10 +103,40 @@ uv run python -m pytest
 
 ## セキュリティと設定の注意
 
-シークレット、API キー、値が入ったローカル環境ファイルはコミットしないでください。仮想環境、ビルド成果物、キャッシュはバージョン管理に含めません。
+シークレット、API キー、値が入ったローカル環境ファイルはコミットしないでください。`.env` はローカル専用として扱い、バージョン管理に含めません。必要がある場合でも、値ではなく環境変数名だけを参照してください。
+
+仮想環境、ビルド成果物、キャッシュはバージョン管理に含めません。`.gitignore` には少なくとも `.env`、`.venv/`、`__pycache__/`、`.pytest_cache/` を含めます。
 
 ファイル削除や破壊的操作の前には確認してください。
+
+## 推奨ライブラリ
+
+優先度:
+
+1. standard library
+2. pydantic
+3. OpenAI SDK
+4. LangGraph
+5. 必要最低限の追加ライブラリ
+
+依存関係は最小限に保ちます。
+
+## 非推奨
+
+- 巨大 node
+- 過剰 abstraction
+- hidden side effect
+- implicit state mutation
+- premature optimization
+- unnecessary async
+- unnecessary design pattern
+- deeply nested graph
+- 巨大 prompt に全責務を押し込む設計
 
 ## PR 作成方針
 
 - PR のタイトルと本文は日本語で作成する
+- PR 本文には、変更概要、変更理由、テスト結果、セットアップや設定の注意点を含める
+- テスト結果には、実際に実行したコマンドと得られた主要ログを可能な限り記載する
+- LLM/API を使った検証を行った場合は、実行コマンド、対象入力、結果概要、token/credit 消費に関する注意を記載する
+- LLM/API を使わずに検証した場合も、その理由と代替確認方法を記載する
