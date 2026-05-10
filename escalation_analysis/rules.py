@@ -24,15 +24,22 @@ AUTHORITY_KEYWORDS = [
 
 def extract_evidence(state: TicketAnalysisState) -> dict[str, list[str]]:
     ticket = state["ticket"]
-    texts = [ticket.summary, ticket.description, *ticket.comments]
+    texts = [
+        ticket.summary,
+        ticket.description,
+        *(comment.body for comment in ticket.comments),
+    ]
     evidence = [text for text in texts if text.strip()]
     return {"evidence": evidence}
 
 
 def score_knowledge_gap(state: TicketAnalysisState) -> dict[str, int]:
+    ticket = state["ticket"]
     evidence = state.get("evidence", [])
     evidence_text = " ".join(evidence).lower()
     score = sum(1 for keyword in KNOWLEDGE_KEYWORDS if keyword in evidence_text)
+    if ticket.no_document:
+        score += 1
     return {"knowledge_score": score}
 
 

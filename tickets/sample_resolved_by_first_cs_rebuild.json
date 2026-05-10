@@ -1,0 +1,35 @@
+{
+  "component": ["vm/pm"],
+  "key": "SAMPLE-9063",
+  "url": "https://sample.atlassian.net/browse/SAMPLE-9063",
+  "created": "2026-03-29 12:40",
+  "closed": "2026-03-29 14:10",
+  "summary": "VM becomes unstable and fails to start after reboot",
+  "description": "The customer reported that the VM repeatedly failed to start and sometimes became unresponsive after reboot. First-CS reviewed the symptoms, guided the customer through a VM rebuild, and the issue was resolved without escalation.",
+  "labels": ["vm", "rebuild", "first-cs-resolved"],
+  "category": "Incident",
+  "assignee": "First-CS Agent",
+  "escalation": false,
+  "no_document": false,
+  "comments": [
+    {
+      "body": "Reporter said the VM did not start after reboot and the console showed intermittent boot failures.",
+      "created": "2026-03-29 13:00"
+    },
+    {
+      "body": "First-CS checked the VM status, confirmed that a rebuild was appropriate, and shared the rebuild procedure with the customer.",
+      "created": "2026-03-29 13:20"
+    },
+    {
+      "body": "Customer completed the rebuild and confirmed that the VM started normally and the issue was resolved.",
+      "created": "2026-03-29 14:00"
+    }
+  ],
+  "comment_stats": {
+    "total_comments": 3,
+    "first_cs_comment": 2,
+    "rerporter_comments": 1,
+    "other_comments": 0,
+    "first_cs_ratio": 0.67
+  }
+}

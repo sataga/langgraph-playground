@@ -27,7 +27,11 @@ uv run python main.py
 JSON ファイルを指定して実行:
 
 ```bash
-uv run python main.py --input tickets/sample_authority_blocked.json
+uv run python main.py --input tickets/sample_escalated_vm_metadata_corruption.json
+```
+
+```bash
+uv run python main.py --input tickets/sample_resolved_by_first_cs_rebuild.json
 ```
 
 Node の移り変わりを確認:
@@ -39,7 +43,7 @@ uv run python main.py --debug
 JSON ファイルを指定して Node の移り変わりを確認:
 
 ```bash
-uv run python main.py --input tickets/sample_authority_blocked.json --debug
+uv run python main.py --input tickets/sample_escalated_vm_metadata_corruption.json --debug
 ```
 
 この段階では OpenAI API や職場データは使いません。まず Node、Edge、State の感覚を掴むため、キーワードベースで `knowledge_gap` / `authority_blocked` / `mixed` / `unclear` を分類します。
