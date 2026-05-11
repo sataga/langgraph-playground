@@ -18,9 +18,9 @@ Jira エスカレーション自動分析エージェントを、小さなステ
 
 現在は、次の分類を扱います。
 
-- `knowledge_gap`: 次回からは一次受付で対応できる見込みがある
+- `first_cs_improvable`: 次回からは First-CS で対応・改善できる見込みがある
 - `authority_blocked`: 権限やロール不足で一次受付だけでは解決できなかった
-- `mixed`: 知識不足と権限不足の両方の要素がある
+- `mixed`: First-CS 側で改善できる可能性と権限不足の両方の要素がある
 - `unclear`: 判断材料が足りない
 
 現在は、ダミー Jira チケットを使って次の 2 通りの実装を試せます。
@@ -41,7 +41,7 @@ Jira エスカレーション自動分析エージェントを、小さなステ
 ```text
 START
   -> extract_evidence
-  -> score_knowledge_gap
+  -> score_first_cs_improvable
   -> score_authority_blocked
   -> judge_category
   -> assign_label
@@ -50,7 +50,7 @@ START
 
 ### Step 2: LLM 判定ノードへ置き換える
 
-`--llm` を付けると、`score_knowledge_gap`、`score_authority_blocked`、`judge_category`、`assign_label` の代わりに、LLM 判定ノード `analyze_with_llm` を使います。
+`--llm` を付けると、`score_first_cs_improvable`、`score_authority_blocked`、`judge_category`、`assign_label` の代わりに、LLM 判定ノード `analyze_with_llm` を使います。
 
 LLM 使用版の流れは次の通りです。
 

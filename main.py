@@ -1,10 +1,18 @@
 from __future__ import annotations
 
 import argparse
+import sys
 
 from escalation_analysis.graph import build_graph
 from escalation_analysis.io import load_ticket, print_json
 from escalation_analysis.models import AnalysisResult, JiraTicket
+
+
+def configure_output_encoding() -> None:
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
+    if hasattr(sys.stderr, "reconfigure"):
+        sys.stderr.reconfigure(encoding="utf-8")
 
 
 def run_with_debug(
@@ -62,6 +70,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> None:
+    configure_output_encoding()
     args = parse_args()
     ticket = load_ticket(args.input)
 
