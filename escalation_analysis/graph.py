@@ -7,7 +7,7 @@ from escalation_analysis.rules import (
     extract_evidence,
     judge_category,
     score_authority_blocked,
-    score_knowledge_gap,
+    score_first_cs_improvable,
 )
 from escalation_analysis.state import TicketAnalysisState
 
@@ -31,13 +31,13 @@ def build_graph(*, use_llm: bool = False, model: str = "gpt-5-nano"):
         graph.add_edge("extract_evidence", "analyze_with_llm")
         graph.add_edge("analyze_with_llm", END)
     else:
-        graph.add_node("score_knowledge_gap", score_knowledge_gap)
+        graph.add_node("score_first_cs_improvable", score_first_cs_improvable)
         graph.add_node("score_authority_blocked", score_authority_blocked)
         graph.add_node("judge_category", judge_category)
         graph.add_node("assign_label", assign_label)
 
-        graph.add_edge("extract_evidence", "score_knowledge_gap")
-        graph.add_edge("score_knowledge_gap", "score_authority_blocked")
+        graph.add_edge("extract_evidence", "score_first_cs_improvable")
+        graph.add_edge("score_first_cs_improvable", "score_authority_blocked")
         graph.add_edge("score_authority_blocked", "judge_category")
         graph.add_edge("judge_category", "assign_label")
         graph.add_edge("assign_label", END)

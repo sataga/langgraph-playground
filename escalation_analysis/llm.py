@@ -11,7 +11,7 @@ from escalation_analysis.state import TicketAnalysisState
 
 DEFAULT_MODEL = "gpt-5-nano"
 LABELS = {
-    "knowledge_gap": "escalation:knowledge_gap",
+    "first_cs_improvable": "escalation:first_cs_improvable",
     "authority_blocked": "escalation:authority_blocked",
     "mixed": "escalation:mixed",
     "unclear": "escalation:needs_human_review",
@@ -22,14 +22,16 @@ SYSTEM_PROMPT = """You classify Jira tickets that were already escalated.
 Classify why the escalation happened, not whether the ticket was escalated.
 
 Return one category:
-- knowledge_gap: future similar tickets can likely be handled by first-level support using existing docs, runbooks, or basic investigation.
+- first_cs_improvable: future similar tickets can likely be handled by First-CS through better checking, investigation, or judgement.
 - authority_blocked: escalation was unavoidable because the agent lacked required permission, role, or admin access.
-- mixed: both avoidable knowledge gaps and permission blockers are present.
+- mixed: both First-CS improvement opportunities and permission blockers are present.
 - unclear: there is not enough evidence to decide.
 
-Use only the provided ticket content. Keep the reason short and concrete.
+Use only the provided ticket content. Do not infer from external documents.
+Write reason and evidence in Japanese, even if the ticket is written in Japanese, English, or Korean.
+Keep the reason short and concrete.
 Set label to one of:
-- escalation:knowledge_gap
+- escalation:first_cs_improvable
 - escalation:authority_blocked
 - escalation:mixed
 - escalation:needs_human_review

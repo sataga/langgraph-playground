@@ -5,7 +5,7 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 
-Category = Literal["knowledge_gap", "authority_blocked", "mixed", "unclear"]
+Category = Literal["first_cs_improvable", "authority_blocked", "mixed", "unclear"]
 
 
 class TicketComment(BaseModel):
