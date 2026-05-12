@@ -31,6 +31,7 @@ class JiraTicket(BaseModel):
 
 
 class AnalysisResult(BaseModel):
+    key: str = Field(description="Jira ticket key for applying labels later.")
     category: Category
     label: str
     confidence: float = Field(ge=0.0, le=1.0)

@@ -104,6 +104,7 @@ def classify_escalation(state: TicketAnalysisState) -> dict[str, AnalysisResult]
         findings = ["分類に使える明確な根拠は抽出できませんでした。"]
 
     result = AnalysisResult(
+        key=state["ticket"].key,
         category=category,
         label=LABELS[category],
         confidence=confidence,
