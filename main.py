@@ -4,9 +4,13 @@ import argparse
 import sys
 
 from escalation_analysis.graph import build_graph
-from escalation_analysis.io import load_ticket, print_json
+from escalation_analysis.io import load_tickets, print_json
 from escalation_analysis.jira import apply_label
-from escalation_analysis.models import AnalysisResult, JiraTicket
+from escalation_analysis.models import (
+    AnalysisResult,
+    JiraLabelUpdateResult,
+    JiraTicket,
+)
 
 
 def configure_output_encoding() -> None:
@@ -53,7 +57,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--input",
         help=(
-            "Path to a UTF-8 JSON file containing one Jira ticket. "
+            "Path to a UTF-8 JSON file containing one Jira ticket or a records array. "
             "Defaults to tickets/sample_escalated_vm_metadata_corruption.json."
         ),
     )
@@ -86,20 +90,47 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     configure_output_encoding()
     args = parse_args()
-    ticket = load_ticket(args.input)
-
-    if args.debug:
-        result = run_with_debug(ticket, use_llm=args.llm, model=args.model)
-    else:
-        app = build_graph(use_llm=args.llm, model=args.model)
-        final_state = app.invoke({"ticket": ticket})
-        result = final_state["result"]
+    tickets = load_tickets(args.input)
+    results = [
+        analyze_ticket(ticket, debug=args.debug, use_llm=args.llm, model=args.model)
+        for ticket in tickets
+    ]
 
     if args.apply_label:
-        label_update = apply_label(result, dry_run=args.dry_run)
-        print_json({"analysis": result, "jira_label_update": label_update})
+        update_results = [
+            {
+                "analysis": result,
+                "jira_label_update": apply_label(result, dry_run=args.dry_run),
+            }
+            for result in results
+        ]
+        print_json(one_or_many(update_results))
     else:
-        print_json(result)
+        print_json(one_or_many(results))
+
+
+def analyze_ticket(
+    ticket: JiraTicket,
+    *,
+    debug: bool,
+    use_llm: bool,
+    model: str,
+) -> AnalysisResult:
+    if debug:
+        return run_with_debug(ticket, use_llm=use_llm, model=model)
+
+    app = build_graph(use_llm=use_llm, model=model)
+    final_state = app.invoke({"ticket": ticket})
+    return final_state["result"]
+
+
+def one_or_many(
+    items: list[AnalysisResult]
+    | list[dict[str, AnalysisResult | JiraLabelUpdateResult]],
+) -> AnalysisResult | dict[str, AnalysisResult | JiraLabelUpdateResult] | list[object]:
+    if len(items) == 1:
+        return items[0]
+    return items
 
 
 if __name__ == "__main__":

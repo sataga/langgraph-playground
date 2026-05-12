@@ -11,10 +11,10 @@ from escalation_analysis.state import TicketAnalysisState
 
 DEFAULT_MODEL = "gpt-5-nano"
 LABELS = {
-    "first_cs_improvable": "escalation:first_cs_improvable",
-    "authority_blocked": "escalation:authority_blocked",
-    "mixed": "escalation:mixed",
-    "unclear": "escalation:needs_human_review",
+    "first_cs_improvable": "improvable",
+    "authority_blocked": "unavoidable",
+    "mixed": "mixed",
+    "unclear": "needs_review",
 }
 
 SYSTEM_PROMPT = """You classify Jira tickets that were already escalated.
@@ -28,7 +28,7 @@ Return one category:
 - unclear: there is not enough evidence to decide.
 
 Use only the provided ticket content. Do not infer from external documents.
-All output values except category, label, and confidence must be written in Japanese.
+All output values except key, category, label, and confidence must be written in Japanese.
 Set key to the exact Jira ticket key from the provided ticket JSON.
 Write reason in Japanese, even if the ticket is written in Japanese, English, or Korean.
 Write each evidence item as a short Japanese summary.
@@ -36,10 +36,10 @@ Do not copy English or Korean source sentences into evidence.
 Translate or paraphrase the relevant ticket content into Japanese.
 Keep the reason short and concrete.
 Set label to one of:
-- escalation:first_cs_improvable
-- escalation:authority_blocked
-- escalation:mixed
-- escalation:needs_human_review
+- improvable
+- unavoidable
+- mixed
+- needs_review
 """
 
 

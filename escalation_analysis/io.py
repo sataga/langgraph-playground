@@ -30,3 +30,11 @@ def load_ticket(input_path: str | None) -> JiraTicket:
     path = DEFAULT_TICKET_PATH if input_path is None else Path(input_path)
     payload = json.loads(path.read_text(encoding="utf-8"))
     return JiraTicket.model_validate(payload)
+
+
+def load_tickets(input_path: str | None) -> list[JiraTicket]:
+    path = DEFAULT_TICKET_PATH if input_path is None else Path(input_path)
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if isinstance(payload, dict) and "records" in payload:
+        return [JiraTicket.model_validate(record) for record in payload["records"]]
+    return [JiraTicket.model_validate(payload)]
