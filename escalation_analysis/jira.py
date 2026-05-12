@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 from escalation_analysis.models import AnalysisResult, JiraLabelUpdateResult
 
 
-JIRA_API_PATH = "/rest/api/2/issue/{key}"
+JIRA_API_PATH = "/rest/api/latest/issue/{key}"
 REQUEST_TIMEOUT_SECONDS = 20
 
 
@@ -59,13 +59,13 @@ def apply_label(
 def load_jira_config() -> tuple[str, str]:
     load_dotenv()
     base_url = os.environ.get("JIRA_BASE_URL")
-    personal_access_token = os.environ.get("JIRA_PAT")
+    personal_access_token = os.environ.get("JIRA_ACCESS_TOKEN")
 
     missing = [
         name
         for name, value in {
             "JIRA_BASE_URL": base_url,
-            "JIRA_PAT": personal_access_token,
+            "JIRA_ACCESS_TOKEN": personal_access_token,
         }.items()
         if not value
     ]
