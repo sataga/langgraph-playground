@@ -44,3 +44,11 @@ class AnalysisResult(BaseModel):
             "Japanese instead of copying non-Japanese source text."
         )
     )
+
+
+class JiraLabelUpdateResult(BaseModel):
+    key: str
+    label: str
+    dry_run: bool
+    applied: bool
+    message: str
