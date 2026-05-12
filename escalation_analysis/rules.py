@@ -21,7 +21,7 @@ FIRST_CS_IMPROVABLE_FINDINGS = {
     "without checking": "必要な確認を行わずにエスカレーションした可能性があります。",
     "did not check": "必要な確認を行っていない記述があります。",
     "before checking": "確認前にエスカレーションした記述があります。",
-    "unknown procedure": "手順の理解不足を示す記述があります。",
+    "unknown procedure": "手順理解の不足を示す記述があります。",
     "missed document": "参照すべきドキュメントを見落とした可能性があります。",
     "investigation missing": "一次受付での調査不足を示す記述があります。",
     "should have been attempted": "一次受付で試すべき手順があった記述があります。",
@@ -46,6 +46,27 @@ AUTHORITY_FINDINGS = {
     "disabled": "一次受付の権限では操作できない状態であることを示す記述があります。",
 }
 
+LABELS = {
+    "first_cs_improvable": "escalation:first_cs_improvable",
+    "authority_blocked": "escalation:authority_blocked",
+    "mixed": "escalation:mixed",
+    "unclear": "escalation:needs_human_review",
+}
+
+CATEGORY_REASONS = {
+    "first_cs_improvable": (
+        "権限不足による不可避なエスカレーションではなく、"
+        "First-CS の確認や判断を改善できる可能性が高いです。"
+    ),
+    "authority_blocked": (
+        "一次受付では実行できない権限、ロール、管理者操作が必要だった可能性が高いです。"
+    ),
+    "mixed": (
+        "権限不足を示す根拠と First-CS 側で改善できる可能性を示す根拠の両方があります。"
+    ),
+    "unclear": "分類に必要な根拠が不足しているため、人による確認が必要です。",
+}
+
 
 def extract_evidence(state: TicketAnalysisState) -> dict[str, list[str]]:
     ticket = state["ticket"]
@@ -58,97 +79,63 @@ def extract_evidence(state: TicketAnalysisState) -> dict[str, list[str]]:
     return {"evidence": evidence}
 
 
-def score_first_cs_improvable(state: TicketAnalysisState) -> dict[str, int | list[str]]:
-    ticket = state["ticket"]
+def classify_escalation(state: TicketAnalysisState) -> dict[str, AnalysisResult]:
     evidence = state.get("evidence", [])
     evidence_text = " ".join(evidence).lower()
-    score = sum(
-        1 for keyword in FIRST_CS_IMPROVABLE_KEYWORDS if keyword in evidence_text
+
+    first_cs_score, first_cs_findings = score_keywords(
+        evidence_text,
+        FIRST_CS_IMPROVABLE_KEYWORDS,
+        FIRST_CS_IMPROVABLE_FINDINGS,
     )
-    findings = [
-        finding
-        for keyword, finding in FIRST_CS_IMPROVABLE_FINDINGS.items()
-        if keyword in evidence_text
-    ]
-    if ticket.no_document:
-        score += 1
-        findings.append("参照できるドキュメントがないことを示すフラグがあります。")
-    return {
-        "first_cs_improvable_score": score,
-        "first_cs_improvable_findings": findings,
-    }
+    authority_score, authority_findings = score_keywords(
+        evidence_text,
+        AUTHORITY_KEYWORDS,
+        AUTHORITY_FINDINGS,
+    )
 
+    if state["ticket"].no_document:
+        first_cs_score += 1
+        first_cs_findings.append("参照できるドキュメントがないことを示すフラグがあります。")
 
-def score_authority_blocked(state: TicketAnalysisState) -> dict[str, int | list[str]]:
-    evidence = state.get("evidence", [])
-    evidence_text = " ".join(evidence).lower()
-    score = sum(1 for keyword in AUTHORITY_KEYWORDS if keyword in evidence_text)
-    findings = [
-        finding
-        for keyword, finding in AUTHORITY_FINDINGS.items()
-        if keyword in evidence_text
-    ]
-    return {"authority_score": score, "authority_findings": findings}
-
-
-def judge_category(state: TicketAnalysisState) -> dict[str, Category | float | str]:
-    first_cs_score = state.get("first_cs_improvable_score", 0)
-    authority_score = state.get("authority_score", 0)
-
-    if first_cs_score == 0 and authority_score == 0:
-        return {
-            "category": "unclear",
-            "confidence": 0.2,
-            "judgement_reason": "権限不足または First-CS 改善余地を示す十分な根拠が見つかりませんでした。",
-        }
-
-    if first_cs_score > 0 and authority_score > 0:
-        return {
-            "category": "mixed",
-            "confidence": 0.6,
-            "judgement_reason": "権限不足を示す根拠と First-CS 側で改善できる可能性を示す根拠の両方があります。",
-        }
-
-    if authority_score > first_cs_score:
-        return {
-            "category": "authority_blocked",
-            "confidence": 0.85,
-            "judgement_reason": "一次受付では実行できない権限・ロール・管理者操作が必要だった可能性が高いです。",
-        }
-
-    return {
-        "category": "first_cs_improvable",
-        "confidence": 0.85,
-        "judgement_reason": "権限不足による不可避なエスカレーションではなく、First-CS の確認・判断改善で次回対応できる可能性があります。",
-    }
-
-
-def assign_label(state: TicketAnalysisState) -> dict[str, AnalysisResult]:
-    category = state.get("category", "unclear")
-    labels = {
-        "first_cs_improvable": "escalation:first_cs_improvable",
-        "authority_blocked": "escalation:authority_blocked",
-        "mixed": "escalation:mixed",
-        "unclear": "escalation:needs_human_review",
-    }
-    reasons = {
-        "first_cs_improvable": "権限不足による不可避なエスカレーションではなく、First-CS の確認・判断改善で次回対応できる可能性があります。",
-        "authority_blocked": "一次受付では実行できない権限・ロール・管理者操作が必要だった可能性が高いです。",
-        "mixed": "権限不足を示す根拠と First-CS 側で改善できる可能性を示す根拠の両方があります。",
-        "unclear": "分類に必要な根拠が不足しているため、人による確認が必要です。",
-    }
-    findings = [
-        *state.get("authority_findings", []),
-        *state.get("first_cs_improvable_findings", []),
-    ]
+    category, confidence = choose_category(first_cs_score, authority_score)
+    findings = [*authority_findings, *first_cs_findings]
     if not findings:
         findings = ["分類に使える明確な根拠は抽出できませんでした。"]
 
     result = AnalysisResult(
+        key=state["ticket"].key,
         category=category,
-        label=labels[category],
-        confidence=state.get("confidence", 0.0),
-        reason=state.get("judgement_reason", reasons[category]),
+        label=LABELS[category],
+        confidence=confidence,
+        reason=CATEGORY_REASONS[category],
         evidence=findings,
     )
     return {"result": result}
+
+
+def score_keywords(
+    evidence_text: str,
+    keywords: list[str],
+    findings_by_keyword: dict[str, str],
+) -> tuple[int, list[str]]:
+    score = sum(1 for keyword in keywords if keyword in evidence_text)
+    findings = [
+        finding
+        for keyword, finding in findings_by_keyword.items()
+        if keyword in evidence_text
+    ]
+    return score, findings
+
+
+def choose_category(first_cs_score: int, authority_score: int) -> tuple[Category, float]:
+    if first_cs_score == 0 and authority_score == 0:
+        return "unclear", 0.2
+
+    if first_cs_score > 0 and authority_score > 0:
+        return "mixed", 0.6
+
+    if authority_score > first_cs_score:
+        return "authority_blocked", 0.85
+
+    return "first_cs_improvable", 0.85

@@ -3,11 +3,8 @@ from __future__ import annotations
 from langchain_core._api.deprecation import suppress_langchain_deprecation_warning
 
 from escalation_analysis.rules import (
-    assign_label,
+    classify_escalation,
     extract_evidence,
-    judge_category,
-    score_authority_blocked,
-    score_first_cs_improvable,
 )
 from escalation_analysis.state import TicketAnalysisState
 
@@ -25,21 +22,13 @@ def build_graph(*, use_llm: bool = False, model: str = "gpt-5-nano"):
         from escalation_analysis.llm import analyze_with_llm
 
         graph.add_node(
-            "analyze_with_llm",
+            "classify_escalation",
             lambda state: analyze_with_llm(state, model=model),
         )
-        graph.add_edge("extract_evidence", "analyze_with_llm")
-        graph.add_edge("analyze_with_llm", END)
     else:
-        graph.add_node("score_first_cs_improvable", score_first_cs_improvable)
-        graph.add_node("score_authority_blocked", score_authority_blocked)
-        graph.add_node("judge_category", judge_category)
-        graph.add_node("assign_label", assign_label)
+        graph.add_node("classify_escalation", classify_escalation)
 
-        graph.add_edge("extract_evidence", "score_first_cs_improvable")
-        graph.add_edge("score_first_cs_improvable", "score_authority_blocked")
-        graph.add_edge("score_authority_blocked", "judge_category")
-        graph.add_edge("judge_category", "assign_label")
-        graph.add_edge("assign_label", END)
+    graph.add_edge("extract_evidence", "classify_escalation")
+    graph.add_edge("classify_escalation", END)
 
     return graph.compile()

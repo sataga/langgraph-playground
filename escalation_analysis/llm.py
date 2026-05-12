@@ -28,7 +28,12 @@ Return one category:
 - unclear: there is not enough evidence to decide.
 
 Use only the provided ticket content. Do not infer from external documents.
-Write reason and evidence in Japanese, even if the ticket is written in Japanese, English, or Korean.
+All output values except category, label, and confidence must be written in Japanese.
+Set key to the exact Jira ticket key from the provided ticket JSON.
+Write reason in Japanese, even if the ticket is written in Japanese, English, or Korean.
+Write each evidence item as a short Japanese summary.
+Do not copy English or Korean source sentences into evidence.
+Translate or paraphrase the relevant ticket content into Japanese.
 Keep the reason short and concrete.
 Set label to one of:
 - escalation:first_cs_improvable
@@ -45,8 +50,13 @@ def build_llm(model: str = DEFAULT_MODEL):
     return ChatOpenAI(model=model).with_structured_output(AnalysisResult)
 
 
-def normalize_result(result: AnalysisResult) -> AnalysisResult:
-    return result.model_copy(update={"label": LABELS[result.category]})
+def normalize_result(result: AnalysisResult, *, ticket_key: str) -> AnalysisResult:
+    return result.model_copy(
+        update={
+            "key": ticket_key,
+            "label": LABELS[result.category],
+        }
+    )
 
 
 def analyze_with_llm(
@@ -66,6 +76,9 @@ def analyze_with_llm(
                 "\n".join(
                     [
                         "Analyze this Jira ticket.",
+                        f"Set key to this exact value: {ticket.key}",
+                        "Return reason and evidence in Japanese.",
+                        "Do not copy non-Japanese source sentences into evidence.",
                         "",
                         f"Ticket JSON:\n{ticket.model_dump_json(indent=2)}",
                         "",
@@ -80,4 +93,4 @@ def analyze_with_llm(
     if not isinstance(result, AnalysisResult):
         result = AnalysisResult.model_validate(result)
 
-    return {"result": normalize_result(result)}
+    return {"result": normalize_result(result, ticket_key=ticket.key)}
