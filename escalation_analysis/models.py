@@ -34,5 +34,12 @@ class AnalysisResult(BaseModel):
     category: Category
     label: str
     confidence: float = Field(ge=0.0, le=1.0)
-    reason: str
-    evidence: list[str]
+    reason: str = Field(
+        description="Short Japanese explanation for the classification result."
+    )
+    evidence: list[str] = Field(
+        description=(
+            "Japanese evidence summaries. Translate or paraphrase ticket content into "
+            "Japanese instead of copying non-Japanese source text."
+        )
+    )

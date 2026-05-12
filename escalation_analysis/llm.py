@@ -28,7 +28,11 @@ Return one category:
 - unclear: there is not enough evidence to decide.
 
 Use only the provided ticket content. Do not infer from external documents.
-Write reason and evidence in Japanese, even if the ticket is written in Japanese, English, or Korean.
+All output values except category, label, and confidence must be written in Japanese.
+Write reason in Japanese, even if the ticket is written in Japanese, English, or Korean.
+Write each evidence item as a short Japanese summary.
+Do not copy English or Korean source sentences into evidence.
+Translate or paraphrase the relevant ticket content into Japanese.
 Keep the reason short and concrete.
 Set label to one of:
 - escalation:first_cs_improvable
@@ -66,6 +70,8 @@ def analyze_with_llm(
                 "\n".join(
                     [
                         "Analyze this Jira ticket.",
+                        "Return reason and evidence in Japanese.",
+                        "Do not copy non-Japanese source sentences into evidence.",
                         "",
                         f"Ticket JSON:\n{ticket.model_dump_json(indent=2)}",
                         "",
