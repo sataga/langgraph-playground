@@ -1,5 +1,5 @@
 {
-  "component": ["vm/pm"],
+  "components": ["vm/pm"],
   "key": "SAMPLE-9062",
   "url": "https://sample.atlassian.net/browse/SAMPLE-9062",
   "created": "2026-03-29 12:34",

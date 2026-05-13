@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import AliasChoices, BaseModel, Field
+from pydantic import BaseModel, Field
 
 
 Category = Literal["first_cs_improvable", "authority_blocked", "mixed", "unclear"]
@@ -14,10 +14,7 @@ class TicketComment(BaseModel):
 
 
 class JiraTicket(BaseModel):
-    component: list[str] = Field(
-        default_factory=list,
-        validation_alias=AliasChoices("component", "components"),
-    )
+    components: list[str] = Field(default_factory=list)
     key: str
     url: str = ""
     created: str = ""
