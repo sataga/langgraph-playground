@@ -14,18 +14,7 @@ REQUEST_TIMEOUT_SECONDS = 20
 
 def apply_label(
     result: AnalysisResult,
-    *,
-    dry_run: bool,
 ) -> JiraLabelUpdateResult:
-    if dry_run:
-        return JiraLabelUpdateResult(
-            key=result.key,
-            label=result.label,
-            dry_run=True,
-            applied=False,
-            message="Dry run: Jira API was not called.",
-        )
-
     base_url, personal_access_token = load_jira_config()
     url = f"{base_url.rstrip('/')}{JIRA_API_PATH.format(key=result.key)}"
     payload = {"update": {"labels": [{"add": result.label}]}}
@@ -50,7 +39,6 @@ def apply_label(
     return JiraLabelUpdateResult(
         key=result.key,
         label=result.label,
-        dry_run=False,
         applied=True,
         message="Jira label was added.",
     )

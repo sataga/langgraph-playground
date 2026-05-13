@@ -49,6 +49,5 @@ class AnalysisResult(BaseModel):
 class JiraLabelUpdateResult(BaseModel):
     key: str
     label: str
-    dry_run: bool
     applied: bool
     message: str

@@ -4,13 +4,14 @@ import argparse
 import sys
 
 from escalation_analysis.graph import build_graph
-from escalation_analysis.io import load_tickets, print_json
-from escalation_analysis.jira import apply_label
-from escalation_analysis.models import (
-    AnalysisResult,
-    JiraLabelUpdateResult,
-    JiraTicket,
+from escalation_analysis.io import (
+    load_analysis_results,
+    load_tickets,
+    print_json,
+    write_json,
 )
+from escalation_analysis.jira import apply_label
+from escalation_analysis.models import AnalysisResult, JiraLabelUpdateResult, JiraTicket
 
 
 def configure_output_encoding() -> None:
@@ -29,7 +30,7 @@ def run_with_debug(
     app = build_graph(use_llm=use_llm, model=model)
     result: AnalysisResult | None = None
 
-    print("Node transitions:")
+    print(f"Node transitions for {ticket.key}:")
     for update in app.stream({"ticket": ticket}, stream_mode="updates"):
         for node_name, node_update in update.items():
             print(f"\n[{node_name}]")
@@ -47,66 +48,84 @@ def run_with_debug(
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Analyze a Jira escalation ticket with LangGraph."
+        description="Analyze Jira escalation tickets and apply planned labels."
     )
-    parser.add_argument(
-        "--debug",
-        action="store_true",
-        help="Print each LangGraph node update before the final result.",
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    read_parser = subparsers.add_parser(
+        "read",
+        help="Analyze Jira ticket JSON and write planned label updates to a file.",
     )
-    parser.add_argument(
+    read_parser.add_argument(
         "--input",
         help=(
             "Path to a UTF-8 JSON file containing one Jira ticket or a records array. "
             "Defaults to tickets/sample_escalated_vm_metadata_corruption.json."
         ),
     )
-    parser.add_argument(
+    read_parser.add_argument(
+        "--output",
+        required=True,
+        help="Path to write analysis results used by the write command.",
+    )
+    read_parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Print each LangGraph node update before writing results.",
+    )
+    read_parser.add_argument(
         "--llm",
         action="store_true",
         help="Use an OpenAI model to classify the ticket instead of local rules.",
     )
-    parser.add_argument(
+    read_parser.add_argument(
         "--model",
         default="gpt-5-nano",
         help="OpenAI model name used with --llm. Defaults to gpt-5-nano.",
     )
-    parser.add_argument(
-        "--apply-label",
-        action="store_true",
-        help="Add the classified label to the Jira ticket.",
+
+    write_parser = subparsers.add_parser(
+        "write",
+        help="Apply Jira labels from an analysis result JSON file.",
     )
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Show the Jira label update that would be performed without calling Jira.",
+    write_parser.add_argument(
+        "--input",
+        required=True,
+        help="Path to a UTF-8 JSON file produced by the read command.",
     )
-    args = parser.parse_args()
-    if args.dry_run and not args.apply_label:
-        parser.error("--dry-run requires --apply-label.")
-    return args
+
+    return parser.parse_args()
 
 
 def main() -> None:
     configure_output_encoding()
     args = parse_args()
+
+    if args.command == "read":
+        results = read_updates(args)
+        write_json(results, args.output)
+        print_json({"output": args.output, "planned_updates": results})
+        return
+
+    if args.command == "write":
+        update_results = write_updates(args.input)
+        print_json(update_results)
+        return
+
+    raise RuntimeError(f"Unsupported command: {args.command}")
+
+
+def read_updates(args: argparse.Namespace) -> list[AnalysisResult]:
     tickets = load_tickets(args.input)
-    results = [
+    return [
         analyze_ticket(ticket, debug=args.debug, use_llm=args.llm, model=args.model)
         for ticket in tickets
     ]
 
-    if args.apply_label:
-        update_results = [
-            {
-                "analysis": result,
-                "jira_label_update": apply_label(result, dry_run=args.dry_run),
-            }
-            for result in results
-        ]
-        print_json(one_or_many(update_results))
-    else:
-        print_json(one_or_many(results))
+
+def write_updates(input_path: str) -> list[JiraLabelUpdateResult]:
+    results = load_analysis_results(input_path)
+    return [apply_label(result) for result in results]
 
 
 def analyze_ticket(
@@ -122,15 +141,6 @@ def analyze_ticket(
     app = build_graph(use_llm=use_llm, model=model)
     final_state = app.invoke({"ticket": ticket})
     return final_state["result"]
-
-
-def one_or_many(
-    items: list[AnalysisResult]
-    | list[dict[str, AnalysisResult | JiraLabelUpdateResult]],
-) -> AnalysisResult | dict[str, AnalysisResult | JiraLabelUpdateResult] | list[object]:
-    if len(items) == 1:
-        return items[0]
-    return items
 
 
 if __name__ == "__main__":
