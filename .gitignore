@@ -14,3 +14,7 @@ wheels/
 
 # Test cache
 .pytest_cache/
+
+# Generated analysis output
+output/*
+!output/.gitkeep

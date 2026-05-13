@@ -14,7 +14,7 @@ class TicketComment(BaseModel):
 
 
 class JiraTicket(BaseModel):
-    component: list[str] = Field(default_factory=list)
+    components: list[str] = Field(default_factory=list)
     key: str
     url: str = ""
     created: str = ""
@@ -33,7 +33,7 @@ class JiraTicket(BaseModel):
 class AnalysisResult(BaseModel):
     key: str = Field(description="Jira ticket key for applying labels later.")
     category: Category
-    label: str
+    label: str = Field(description="Short Jira label to apply to the ticket.")
     confidence: float = Field(ge=0.0, le=1.0)
     reason: str = Field(
         description="Short Japanese explanation for the classification result."
@@ -49,6 +49,5 @@ class AnalysisResult(BaseModel):
 class JiraLabelUpdateResult(BaseModel):
     key: str
     label: str
-    dry_run: bool
     applied: bool
     message: str

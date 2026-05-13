@@ -58,26 +58,44 @@ START
 
 Git Bash で実行します。
 
+### 更新予定 JSON を作成
+
+入力 JSON を分析し、Jira に追加すべきラベル一覧を JSON ファイルへ書き出します。
+
 ```bash
-uv run python main.py
+uv run python main.py read
 ```
 
 入力ファイルを指定する場合:
 
 ```bash
-uv run python main.py --input tickets/sample_escalated_first_cs_rebuild_missed.json
+uv run python main.py read \
+  --input tickets/sample_escalated_first_cs_rebuild_missed.json
 ```
+
+複数チケットを含む `records` 形式の JSON も指定できます。
+
+```bash
+uv run python main.py read \
+  --input tickets/sample_escalated_batch.json
+```
+
+出力先を指定しない場合、リポジトリ直下の `output/` に `escalation_analysis_YYYYMMDD_HHMMSS.json` 形式で保存されます。
 
 node の遷移を確認する場合:
 
 ```bash
-uv run python main.py --debug
+uv run python main.py read \
+  --input tickets/sample_escalated_first_cs_rebuild_missed.json \
+  --debug
 ```
 
 LLM で分類する場合:
 
 ```bash
-uv run python main.py --llm
+uv run python main.py read \
+  --input tickets/sample_escalated_first_cs_rebuild_missed.json \
+  --llm
 ```
 
 LLM 実行には `.env` に `OPENAI_API_KEY` が必要です。
@@ -86,9 +104,24 @@ LLM 実行には `.env` に `OPENAI_API_KEY` が必要です。
 OPENAI_API_KEY=sk-...
 ```
 
+### Jira にラベルを書き込み
+
+`read` で作成した JSON を使って、Jira にラベルを追加します。
+
+```bash
+uv run python main.py write --input output/escalation_analysis_20260513_092153.json
+```
+
+Jira 書き込みには `.env` に `JIRA_BASE_URL` と `JIRA_ACCESS_TOKEN` が必要です。
+
+```env
+JIRA_BASE_URL=https://jira.example.local
+JIRA_ACCESS_TOKEN=...
+```
+
 ## 開発メモ
 
 - Python 3.12 を前提にしています
 - 依存関係管理には `uv` を使います
 - 通常の確認では API token / credit を消費しないルールベース分類を優先します
-- LLM を使う検証は、必要な場合だけ `--llm` を付けて最小件数で実行します
+- LLM を使う検証は、必要な場合だけ `read --llm` を付けて最小件数で実行します

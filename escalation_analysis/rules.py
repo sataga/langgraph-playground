@@ -47,10 +47,10 @@ AUTHORITY_FINDINGS = {
 }
 
 LABELS = {
-    "first_cs_improvable": "escalation:first_cs_improvable",
-    "authority_blocked": "escalation:authority_blocked",
-    "mixed": "escalation:mixed",
-    "unclear": "escalation:needs_human_review",
+    "first_cs_improvable": "improvable",
+    "authority_blocked": "unavoidable",
+    "mixed": "mixed",
+    "unclear": "needs_review",
 }
 
 CATEGORY_REASONS = {
