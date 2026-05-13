@@ -43,9 +43,9 @@ START
 │   ├── models.py
 │   ├── rules.py
 │   └── state.py
-├── input/
+├── jira_exports/
 │   └── .gitkeep
-├── output/
+├── analysis_results/
 │   └── .gitkeep
 └── samples/
 ```
@@ -82,7 +82,7 @@ uv run python main.py fetch --project all
 uv run python main.py fetch --project project_a --max-results 50
 ```
 
-出力先を指定しない場合、リポジトリ直下の `input/` に `escalation_analysis_YYYYMMDD_HHMMSS.json` 形式で保存されます。生成された JSON は `.gitignore` で管理対象外になります。
+出力先を指定しない場合、リポジトリ直下の `jira_exports/` に `escalation_analysis_YYYYMMDD_HHMMSS.json` 形式で保存されます。生成された JSON は `.gitignore` で管理対象外になります。
 
 ### 更新予定 JSON を作成
 
@@ -96,7 +96,7 @@ uv run python main.py analysis
 
 ```bash
 uv run python main.py analysis \
-  --input input/escalation_analysis_20260513_092153.json
+  --input jira_exports/escalation_analysis_20260513_092153.json
 ```
 
 管理対象のサンプルデータを指定する場合:
@@ -111,7 +111,7 @@ uv run python main.py analysis --sample first_cs_rebuild_missed
 uv run python main.py analysis --sample batch
 ```
 
-出力先を指定しない場合、リポジトリ直下の `output/` に `escalation_analysis_YYYYMMDD_HHMMSS.json` 形式で保存されます。
+出力先を指定しない場合、リポジトリ直下の `analysis_results/` に `escalation_analysis_YYYYMMDD_HHMMSS.json` 形式で保存されます。
 
 node の遷移を確認する場合:
 
@@ -140,7 +140,7 @@ OPENAI_API_KEY=sk-...
 `analysis` で作成した JSON を使って、Jira にラベルを追加します。
 
 ```bash
-uv run python main.py apply --input output/escalation_analysis_20260513_092153.json
+uv run python main.py apply --input analysis_results/escalation_analysis_20260513_092153.json
 ```
 
 Jira 書き込みには `.env` に `JIRA_BASE_URL` と `JIRA_ACCESS_TOKEN` が必要です。

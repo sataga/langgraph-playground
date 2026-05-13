@@ -16,8 +16,8 @@ from escalation_analysis.jira import PROJECT_JQL, apply_label, fetch_tickets
 from escalation_analysis.models import AnalysisResult, JiraLabelUpdateResult, JiraTicket
 
 
-DEFAULT_INPUT_DIR = Path(__file__).resolve().parent / "input"
-DEFAULT_OUTPUT_DIR = Path(__file__).resolve().parent / "output"
+DEFAULT_JIRA_EXPORT_DIR = Path(__file__).resolve().parent / "jira_exports"
+DEFAULT_ANALYSIS_RESULT_DIR = Path(__file__).resolve().parent / "analysis_results"
 FILE_PREFIX = "escalation_analysis"
 SAMPLE_INPUTS = {
     "vm_metadata_corruption": "samples/sample_escalated_vm_metadata_corruption.json",
@@ -84,7 +84,7 @@ def parse_args() -> argparse.Namespace:
         "--output",
         help=(
             "Path to write fetched ticket JSON. "
-            "Defaults to input/escalation_analysis_YYYYMMDD_HHMMSS.json."
+            "Defaults to jira_exports/escalation_analysis_YYYYMMDD_HHMMSS.json."
         ),
     )
 
@@ -109,7 +109,7 @@ def parse_args() -> argparse.Namespace:
         "--output",
         help=(
             "Path to write analysis results used by the apply command. "
-            "Defaults to output/escalation_analysis_YYYYMMDD_HHMMSS.json."
+            "Defaults to analysis_results/escalation_analysis_YYYYMMDD_HHMMSS.json."
         ),
     )
     analysis_parser.add_argument(
@@ -150,7 +150,7 @@ def main() -> None:
 
     if args.command == "fetch":
         tickets = fetch_tickets(args.project, max_results=args.max_results)
-        output_path = resolve_input_path(args.output)
+        output_path = resolve_jira_export_path(args.output)
         payload = {
             "metadata": {
                 "source": "jira",
@@ -193,15 +193,15 @@ def resolve_output_path(output_path: str | None) -> Path:
         return Path(output_path)
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    return DEFAULT_OUTPUT_DIR / f"{FILE_PREFIX}_{timestamp}.json"
+    return DEFAULT_ANALYSIS_RESULT_DIR / f"{FILE_PREFIX}_{timestamp}.json"
 
 
-def resolve_input_path(input_path: str | None) -> Path:
-    if input_path:
-        return Path(input_path)
+def resolve_jira_export_path(output_path: str | None) -> Path:
+    if output_path:
+        return Path(output_path)
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    return DEFAULT_INPUT_DIR / f"{FILE_PREFIX}_{timestamp}.json"
+    return DEFAULT_JIRA_EXPORT_DIR / f"{FILE_PREFIX}_{timestamp}.json"
 
 
 def apply_updates(input_path: str) -> list[JiraLabelUpdateResult]:

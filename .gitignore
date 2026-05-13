@@ -15,10 +15,10 @@ wheels/
 # Test cache
 .pytest_cache/
 
-# Generated analysis output
-output/*
-!output/.gitkeep
+# Generated analysis results
+analysis_results/*
+!analysis_results/.gitkeep
 
-# Fetched Jira input
-input/*
-!input/.gitkeep
+# Fetched Jira exports
+jira_exports/*
+!jira_exports/.gitkeep
