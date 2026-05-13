@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import argparse
 import sys
+from datetime import datetime
+from pathlib import Path
 
 from escalation_analysis.graph import build_graph
 from escalation_analysis.io import (
@@ -12,6 +14,10 @@ from escalation_analysis.io import (
 )
 from escalation_analysis.jira import apply_label
 from escalation_analysis.models import AnalysisResult, JiraLabelUpdateResult, JiraTicket
+
+
+DEFAULT_OUTPUT_DIR = Path(__file__).resolve().parent / "output"
+OUTPUT_FILE_PREFIX = "escalation_analysis"
 
 
 def configure_output_encoding() -> None:
@@ -65,8 +71,10 @@ def parse_args() -> argparse.Namespace:
     )
     read_parser.add_argument(
         "--output",
-        required=True,
-        help="Path to write analysis results used by the write command.",
+        help=(
+            "Path to write analysis results used by the write command. "
+            "Defaults to output/escalation_analysis_YYYYMMDD_HHMMSS.json."
+        ),
     )
     read_parser.add_argument(
         "--debug",
@@ -103,8 +111,9 @@ def main() -> None:
 
     if args.command == "read":
         results = read_updates(args)
-        write_json(results, args.output)
-        print_json({"output": args.output, "planned_updates": results})
+        output_path = resolve_output_path(args.output)
+        write_json(results, output_path)
+        print_json({"output": str(output_path), "planned_updates": results})
         return
 
     if args.command == "write":
@@ -121,6 +130,14 @@ def read_updates(args: argparse.Namespace) -> list[AnalysisResult]:
         analyze_ticket(ticket, debug=args.debug, use_llm=args.llm, model=args.model)
         for ticket in tickets
     ]
+
+
+def resolve_output_path(output_path: str | None) -> Path:
+    if output_path:
+        return Path(output_path)
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    return DEFAULT_OUTPUT_DIR / f"{OUTPUT_FILE_PREFIX}_{timestamp}.json"
 
 
 def write_updates(input_path: str) -> list[JiraLabelUpdateResult]:

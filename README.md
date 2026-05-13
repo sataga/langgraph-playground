@@ -63,31 +63,30 @@ Git Bash で実行します。
 入力 JSON を分析し、Jira に追加すべきラベル一覧を JSON ファイルへ書き出します。
 
 ```bash
-uv run python main.py read --output analysis_results.json
+uv run python main.py read
 ```
 
 入力ファイルを指定する場合:
 
 ```bash
 uv run python main.py read \
-  --input tickets/sample_escalated_first_cs_rebuild_missed.json \
-  --output analysis_results.json
+  --input tickets/sample_escalated_first_cs_rebuild_missed.json
 ```
 
 複数チケットを含む `records` 形式の JSON も指定できます。
 
 ```bash
 uv run python main.py read \
-  --input tickets/sample_escalated_batch.json \
-  --output analysis_results.json
+  --input tickets/sample_escalated_batch.json
 ```
+
+出力先を指定しない場合、リポジトリ直下の `output/` に `escalation_analysis_YYYYMMDD_HHMMSS.json` 形式で保存されます。
 
 node の遷移を確認する場合:
 
 ```bash
 uv run python main.py read \
   --input tickets/sample_escalated_first_cs_rebuild_missed.json \
-  --output analysis_results.json \
   --debug
 ```
 
@@ -96,7 +95,6 @@ LLM で分類する場合:
 ```bash
 uv run python main.py read \
   --input tickets/sample_escalated_first_cs_rebuild_missed.json \
-  --output analysis_results.json \
   --llm
 ```
 
@@ -111,7 +109,7 @@ OPENAI_API_KEY=sk-...
 `read` で作成した JSON を使って、Jira にラベルを追加します。
 
 ```bash
-uv run python main.py write --input analysis_results.json
+uv run python main.py write --input output/escalation_analysis_20260513_092153.json
 ```
 
 Jira 書き込みには `.env` に `JIRA_BASE_URL` と `JIRA_ACCESS_TOKEN` が必要です。

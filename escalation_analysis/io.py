@@ -26,8 +26,9 @@ def print_json(value: Any) -> None:
     print(json.dumps(to_jsonable(value), indent=2, ensure_ascii=False))
 
 
-def write_json(value: Any, output_path: str) -> None:
+def write_json(value: Any, output_path: str | Path) -> None:
     path = Path(output_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
     payload = json.dumps(to_jsonable(value), indent=2, ensure_ascii=False)
     path.write_text(payload + "\n", encoding="utf-8")
 
