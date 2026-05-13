@@ -18,3 +18,7 @@ wheels/
 # Generated analysis output
 output/*
 !output/.gitkeep
+
+# Fetched Jira input
+input/*
+!input/.gitkeep

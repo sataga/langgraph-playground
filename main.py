@@ -12,12 +12,18 @@ from escalation_analysis.io import (
     print_json,
     write_json,
 )
-from escalation_analysis.jira import apply_label
+from escalation_analysis.jira import PROJECT_JQL, apply_label, fetch_tickets
 from escalation_analysis.models import AnalysisResult, JiraLabelUpdateResult, JiraTicket
 
 
+DEFAULT_INPUT_DIR = Path(__file__).resolve().parent / "input"
 DEFAULT_OUTPUT_DIR = Path(__file__).resolve().parent / "output"
-OUTPUT_FILE_PREFIX = "escalation_analysis"
+FILE_PREFIX = "escalation_analysis"
+SAMPLE_INPUTS = {
+    "vm_metadata_corruption": "samples/sample_escalated_vm_metadata_corruption.json",
+    "first_cs_rebuild_missed": "samples/sample_escalated_first_cs_rebuild_missed.json",
+    "batch": "samples/sample_escalated_batch.json",
+}
 
 
 def configure_output_encoding() -> None:
@@ -58,74 +64,124 @@ def parse_args() -> argparse.Namespace:
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    read_parser = subparsers.add_parser(
-        "read",
+    fetch_parser = subparsers.add_parser(
+        "fetch",
+        help="Fetch Jira tickets with predefined JQL and write input JSON.",
+    )
+    fetch_parser.add_argument(
+        "--project",
+        choices=[*PROJECT_JQL.keys(), "all"],
+        required=True,
+        help="Predefined project JQL to fetch. Use all to fetch every project.",
+    )
+    fetch_parser.add_argument(
+        "--max-results",
+        type=int,
+        default=100,
+        help="Maximum number of tickets to fetch. Defaults to 100.",
+    )
+    fetch_parser.add_argument(
+        "--output",
+        help=(
+            "Path to write fetched ticket JSON. "
+            "Defaults to input/escalation_analysis_YYYYMMDD_HHMMSS.json."
+        ),
+    )
+
+    analysis_parser = subparsers.add_parser(
+        "analysis",
         help="Analyze Jira ticket JSON and write planned label updates to a file.",
     )
-    read_parser.add_argument(
+    analysis_input_group = analysis_parser.add_mutually_exclusive_group()
+    analysis_input_group.add_argument(
         "--input",
         help=(
             "Path to a UTF-8 JSON file containing one Jira ticket or a records array. "
-            "Defaults to tickets/sample_escalated_vm_metadata_corruption.json."
+            "Defaults to samples/sample_escalated_vm_metadata_corruption.json."
         ),
     )
-    read_parser.add_argument(
+    analysis_input_group.add_argument(
+        "--sample",
+        choices=list(SAMPLE_INPUTS),
+        help="Built-in sample JSON to analyze.",
+    )
+    analysis_parser.add_argument(
         "--output",
         help=(
-            "Path to write analysis results used by the write command. "
+            "Path to write analysis results used by the apply command. "
             "Defaults to output/escalation_analysis_YYYYMMDD_HHMMSS.json."
         ),
     )
-    read_parser.add_argument(
+    analysis_parser.add_argument(
         "--debug",
         action="store_true",
         help="Print each LangGraph node update before writing results.",
     )
-    read_parser.add_argument(
+    analysis_parser.add_argument(
         "--llm",
         action="store_true",
         help="Use an OpenAI model to classify the ticket instead of local rules.",
     )
-    read_parser.add_argument(
+    analysis_parser.add_argument(
         "--model",
         default="gpt-5-nano",
         help="OpenAI model name used with --llm. Defaults to gpt-5-nano.",
     )
 
-    write_parser = subparsers.add_parser(
-        "write",
+    apply_parser = subparsers.add_parser(
+        "apply",
         help="Apply Jira labels from an analysis result JSON file.",
     )
-    write_parser.add_argument(
+    apply_parser.add_argument(
         "--input",
         required=True,
-        help="Path to a UTF-8 JSON file produced by the read command.",
+        help="Path to a UTF-8 JSON file produced by the analysis command.",
     )
 
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.command == "fetch" and args.max_results < 1:
+        parser.error("fetch --max-results must be greater than 0.")
+    return args
 
 
 def main() -> None:
     configure_output_encoding()
     args = parse_args()
 
-    if args.command == "read":
-        results = read_updates(args)
+    if args.command == "fetch":
+        tickets = fetch_tickets(args.project, max_results=args.max_results)
+        output_path = resolve_input_path(args.output)
+        payload = {
+            "metadata": {
+                "source": "jira",
+                "analysis": FILE_PREFIX,
+                "project": args.project,
+                "record_count": len(tickets),
+            },
+            "records": tickets,
+        }
+        write_json(payload, output_path)
+        print_json({"output": str(output_path), **payload})
+        return
+
+    if args.command == "analysis":
+        results = analyze_updates(args)
         output_path = resolve_output_path(args.output)
         write_json(results, output_path)
         print_json({"output": str(output_path), "planned_updates": results})
         return
 
-    if args.command == "write":
-        update_results = write_updates(args.input)
+    if args.command == "apply":
+        update_results = apply_updates(args.input)
         print_json(update_results)
         return
 
     raise RuntimeError(f"Unsupported command: {args.command}")
 
 
-def read_updates(args: argparse.Namespace) -> list[AnalysisResult]:
-    tickets = load_tickets(args.input)
+def analyze_updates(args: argparse.Namespace) -> list[AnalysisResult]:
+    input_path = SAMPLE_INPUTS[args.sample] if args.sample else args.input
+    tickets = load_tickets(input_path)
     return [
         analyze_ticket(ticket, debug=args.debug, use_llm=args.llm, model=args.model)
         for ticket in tickets
@@ -137,10 +193,18 @@ def resolve_output_path(output_path: str | None) -> Path:
         return Path(output_path)
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    return DEFAULT_OUTPUT_DIR / f"{OUTPUT_FILE_PREFIX}_{timestamp}.json"
+    return DEFAULT_OUTPUT_DIR / f"{FILE_PREFIX}_{timestamp}.json"
 
 
-def write_updates(input_path: str) -> list[JiraLabelUpdateResult]:
+def resolve_input_path(input_path: str | None) -> Path:
+    if input_path:
+        return Path(input_path)
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    return DEFAULT_INPUT_DIR / f"{FILE_PREFIX}_{timestamp}.json"
+
+
+def apply_updates(input_path: str) -> list[JiraLabelUpdateResult]:
     results = load_analysis_results(input_path)
     return [apply_label(result) for result in results]
 
