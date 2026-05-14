@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from escalation_analysis.models import AnalysisResult, JiraTicket
 
 
-DEFAULT_TICKET_PATH = Path("tickets/sample_escalated_vm_metadata_corruption.json")
+DEFAULT_TICKET_PATH = Path("samples/sample_escalated_vm_metadata_corruption.json")
 
 
 def to_jsonable(value: Any) -> Any:
